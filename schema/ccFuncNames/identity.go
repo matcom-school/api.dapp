@@ -1,5 +1,6 @@
 package ccfuncnames
 
+// Transacciones del contrato de prueba "chaincode-go" de test-network-optativo-nanobash\chaincodes
 const (
 	CC1InitLedger  = "InitLedger"
 	CC1ReadAsset   = "ReadAsset"
@@ -20,6 +21,11 @@ const (
 	ContactUserRead   = "ReadUser"
 	ContactUserGetAll = "GetAllUsers"
 	ContactUserDelete = "DeleteUser"
+
+	MYCCInitLedger  = "InitLedger"
+	MYCCReadAsset   = "ReadAsset"
+	MYCCCreateAsset = "CreateAsset"
+	MYCCUpdateAsset = "UpdateAsset"
 )
 
 const (

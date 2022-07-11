@@ -2,7 +2,12 @@ package hlf
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"path/filepath"
+	"strconv"
+
+	"github.com/ic-matcom/api.dapp/schema/dto"
 
 	ccfuncnames "github.com/ic-matcom/api.dapp/schema/ccFuncNames"
 
@@ -17,7 +22,9 @@ import (
 
 type RepoBlockchain interface {
 	InitLedger() ([]byte, error)
-	Get(ID string) ([]byte, error)
+	ReadAsset(ID string) ([]byte, error)
+	CreateAsset(asset dto.Asset) ([]byte, error)
+	UpdateAsset(asset dto.Asset) ([]byte, error)
 }
 
 type repoBlockchain struct {
@@ -54,7 +61,6 @@ func newRepoBlockchain(SvcConf *utils.SvcConfig) *repoBlockchain {
 
 // region ======== METHODS EVOTE =========================================================
 
-// Suffrage_InitLedger
 func (r *repoBlockchain) InitLedger() ([]byte, error) {
 
 	// getting components instance
@@ -65,7 +71,7 @@ func (r *repoBlockchain) InitLedger() ([]byte, error) {
 	defer gw.Close()
 
 	// Creating the initial data in the ledger
-	issuer, e := contract.SubmitTransaction(ccfuncnames.CC1InitLedger, "[]")
+	issuer, e := contract.SubmitTransaction(ccfuncnames.MYCCInitLedger, "[]")
 	if e != nil {
 		return nil, e
 	}
@@ -73,7 +79,7 @@ func (r *repoBlockchain) InitLedger() ([]byte, error) {
 	return issuer, nil
 }
 
-func (r *repoBlockchain) Get(ID string) ([]byte, error) {
+func (r *repoBlockchain) ReadAsset(ID string) ([]byte, error) {
 	// getting components instance
 	gw, _, contract, e := r.getSDKComponents(r.ChannelName, ccfuncnames.ContractNameCC1, false)
 	if e != nil {
@@ -81,9 +87,8 @@ func (r *repoBlockchain) Get(ID string) ([]byte, error) {
 	}
 	defer gw.Close()
 
-	//strArgs, _ := jsoniter.Marshal(ID)
-	res, e := contract.EvaluateTransaction(ccfuncnames.CC1ReadAsset, string(ID))
-	//res, e := contract.SubmitTransaction(ccfuncnames.CC1ReadAsset, string(strArgs))
+	// usar EvaluateTransaction para Tx de consultas
+	res, e := contract.EvaluateTransaction(ccfuncnames.MYCCReadAsset, ID)
 	if e != nil {
 		return nil, e
 	}
@@ -91,9 +96,45 @@ func (r *repoBlockchain) Get(ID string) ([]byte, error) {
 	return res, nil
 }
 
-// endregion =============================================================================
+func (r *repoBlockchain) CreateAsset(asset dto.Asset) ([]byte, error) {
+	// getting components instance
+	gw, _, contract, e := r.getSDKComponents(r.ChannelName, ccfuncnames.ContractNameCC1, false)
+	if e != nil {
+		return nil, e
+	}
+	defer gw.Close()
 
-// region ======== PRIVATE AUX ===========================================================
+	fmt.Println("CreateAsset: ", asset)
+
+	// usar SubmitTransaction para Tx que modifican o crean activos
+	res, e := contract.SubmitTransaction(ccfuncnames.MYCCCreateAsset, asset.ID, asset.Color, strconv.Itoa(asset.Size), asset.Owner, strconv.Itoa(asset.AppraisedValue))
+	if e != nil {
+		return nil, e
+	}
+
+	fmt.Println("res: ", res)
+
+	return res, nil
+}
+
+func (r *repoBlockchain) UpdateAsset(asset dto.Asset) ([]byte, error) {
+	// getting components instance
+	gw, _, contract, e := r.getSDKComponents(r.ChannelName, ccfuncnames.ContractNameCC1, false)
+	if e != nil {
+		return nil, e
+	}
+	defer gw.Close()
+
+	// usar SubmitTransaction para Tx que modifican o crean activos
+	res, e := contract.SubmitTransaction(ccfuncnames.MYCCUpdateAsset, asset.ID, asset.Color, strconv.Itoa(asset.Size), asset.Owner, strconv.Itoa(asset.AppraisedValue))
+	if e != nil {
+		return nil, e
+	}
+
+	return res, nil
+}
+
+// -------------------------------
 
 // getSDKComponents create the instances for the main components of HLF SDK: gateway, network and contract
 //
@@ -109,18 +150,23 @@ func (r *repoBlockchain) getSDKComponents(channel, contractName string, withAdmi
 		identityLabel = r.DappIdentityAdmin
 	}
 
+	err := os.Setenv("DISCOVERY_AS_LOCALHOST", "true")
+	if err != nil {
+		return nil, nil, nil, errors.New("error setting DISCOVERY_AS_LOCALHOST environment variable")
+	}
+
 	// trying to get an instance of HLF SDK network gateway, from the connection profile
-	gw, e := gateway.Connect( // gt = gateway
+	gw, err := gateway.Connect( // gt = gateway
 		gateway.WithConfig(config.FromFile(filepath.Clean(r.CppPath))),
 		gateway.WithIdentity(r.Wallet, identityLabel))
-	if e != nil {
-		return nil, nil, nil, e
+	if err != nil {
+		return nil, nil, nil, err
 	}
 
 	// trying to get an instance of the gateway network
-	nt, e := gw.GetNetwork(channel) // nt == network
-	if e != nil {
-		return nil, nil, nil, e
+	nt, err := gw.GetNetwork(channel) // nt == network
+	if err != nil {
+		return nil, nil, nil, err
 	}
 
 	// trying to get the contract

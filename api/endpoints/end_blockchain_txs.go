@@ -1,7 +1,6 @@
 package endpoints
 
 import (
-	"fmt"
 	"github.com/ic-matcom/api.dapp/repo/db"
 	"github.com/ic-matcom/api.dapp/repo/hlf"
 	"github.com/ic-matcom/api.dapp/schema"
@@ -58,53 +57,44 @@ func NewBlockchainTxsHandler(app *iris.Application, mdwAuthChecker *context.Hand
 
 		// identity contract
 		// we use the hero handler to inject the depObtainUserDid dependency. If we don't need to inject any dependencies we jus call guardTxsRouter.Get("/identity/identity/{id:string}", h.Identity_DevPopulate)
-		
-		guardTxsRouter.Post("/initledger", h.InitLedger)
-		guardTxsRouter.Get("/optativo/{id:string}", h.Asset_Get)
-		guardTxsRouter.Post("/optativo/set", h.Asset_Set)
+
+		guardTxsRouter.Post("/init_ledger", h.InitLedger)
+		guardTxsRouter.Get("/read_asset/{id:string}", h.ReadAsset)
+		guardTxsRouter.Patch("/update_asset", h.UpdateAsset)
+		guardTxsRouter.Post("/create_asset", h.CreateAsset)
 	}
 
 	return h
 }
 
-// region ======== ENDPOINT HANDLERS DEV =================================================
-
-// Asset_Set
-// @description.markdown SetElection_Request
-// @Tags Txs.eVote
+// InitLedger populate the ledger with first data
+// @Summary populate the ledger with first data
+// @Description populate the ledger with first data
+// @Tags Txs.mycc
 // @Security ApiKeyAuth
 // @Accept  json
 // @Produce json
-// @Param	Authorization	header	string 			        true 	"Insert access token" default(Bearer <Add access token here>)
-// @Param	tx				body	dto.TestRequest		true	"Test data"
-// @Success 200 {object} []dto.TestRequest "OK"
+// @Param	Authorization	header	string	true 	"Insert access token" default(Bearer <Add access token here>)
+// @Success 200 {object} dto.DevPopulateOut "OK"
 // @Failure 401 {object} dto.Problem "err.unauthorized"
-// @Failure 400 {object} dto.Problem "err.processing_param"
 // @Failure 502 {object} dto.Problem "err.bad_gateway"
 // @Failure 504 {object} dto.Problem "err.network"
-// @Router /txs/optativo/set [post]
-func (h HBlockchainTxs) Asset_Set(ctx iris.Context) {
-	var request dto.TestRequest
+// @Router /txs/init_ledger [post]
+func (h HBlockchainTxs) InitLedger(ctx iris.Context) {
 
-	// unmarshalling the json and check
-	if err := ctx.ReadJSON(&request); err != nil {
-		(*h.response).ResErr(&dto.Problem{Status: iris.StatusBadRequest, Title: schema.ErrProcParam, Detail: err.Error()}, &ctx)
+	bcRes, problem := (*h.service).SrvInitLedger()
+	if problem != nil {
+		(*h.response).ResErr(problem, &ctx)
 		return
 	}
 
-	//res, problem := (*h.service).SetAssetSvc(request)
-	//if problem != nil {
-	//	(*h.response).ResErr(problem, &ctx)
-	//	return
-	//}
-
-	(*h.response).ResOKWithData("res", &ctx)
+	(*h.response).ResOKWithData(bcRes, &ctx)
 }
 
-// Asset_Get Get asset from the blockchain ledger. Contracts: mycc
+// ReadAsset Get asset from the blockchain ledger. Contracts: mycc
 // @Summary Get asset from the blockchain ledger.
-// @Description Get asset from the blockchain ledger.
-// @Tags Txs.eVote
+// @description.markdown ReadAsset_Request
+// @Tags Txs.mycc
 // @Security ApiKeyAuth
 // @Accept  json
 // @Produce json
@@ -115,8 +105,8 @@ func (h HBlockchainTxs) Asset_Set(ctx iris.Context) {
 // @Failure 400 {object} dto.Problem "err.processing_param"
 // @Failure 502 {object} dto.Problem "err.bad_gateway"
 // @Failure 504 {object} dto.Problem "err.network"
-// @Router /txs/optativo/{id} [get]
-func (h HBlockchainTxs) Asset_Get(ctx iris.Context) {
+// @Router /txs/read_asset/{id} [get]
+func (h HBlockchainTxs) ReadAsset(ctx iris.Context) {
 	// checking the param
 	id := ctx.Params().GetString("id")
 	if id == "" {
@@ -124,42 +114,75 @@ func (h HBlockchainTxs) Asset_Get(ctx iris.Context) {
 		return
 	}
 
-	result, problem := (*h.service).GetAssetSvc(id)
+	result, problem := (*h.service).ReadAssetSvc(id)
 	if problem != nil {
 		(*h.response).ResErr(problem, &ctx)
 		return
 	}
-	fmt.Println("--> 1", result)
 
 	(*h.response).ResOKWithData(result, &ctx)
 }
 
-// endregion =============================================================================
-
-// region ======== ENDPOINT HANDLERS EVOTE ===============================================
-
-// InitLedger populate the ledger with first data
-// @Summary populate the ledger with first data
-// @Description populate the ledger with first data
-// @Tags Txs.eVote
+// UpdateAsset updates an existing asset in the world state with provided parameters.
+// @Summary updates an existing asset in the world state with provided parameters.
+// @Tags Txs.mycc
 // @Security ApiKeyAuth
 // @Accept  json
 // @Produce json
 // @Param	Authorization	header	string	true 	"Insert access token" default(Bearer <Add access token here>)
-// @Success 200 {object} dto.DevPopulateOut "OK"
+// @Param 	Asset	 		body 	dto.Asset 	true	"Asset Data"
+// @Success 204 "OK"
 // @Failure 401 {object} dto.Problem "err.unauthorized"
+// @Failure 400 {object} dto.Problem "err.processing_param"
 // @Failure 502 {object} dto.Problem "err.bad_gateway"
 // @Failure 504 {object} dto.Problem "err.network"
-// @Router /txs/initledger [post]
-func (h HBlockchainTxs) InitLedger(ctx iris.Context) {
+// @Router /txs/update_asset [patch]
+func (h HBlockchainTxs) UpdateAsset(ctx iris.Context) {
+	// getting asset data
+	var assetParams dto.Asset
+	if err := ctx.ReadJSON(&assetParams); err != nil {
+		(*h.response).ResErr(&dto.Problem{Status: iris.StatusBadRequest, Title: schema.ErrProcParam, Detail: err.Error()}, &ctx)
+		return
+	}
 
-	bcRes, problem := (*h.service).SrvInitLedger()
+	_, problem := (*h.service).UpdateAssetSvc(assetParams)
 	if problem != nil {
 		(*h.response).ResErr(problem, &ctx)
 		return
 	}
 
-	(*h.response).ResOKWithData(bcRes, &ctx)
+	(*h.response).ResOK(&ctx)
+}
+
+// CreateAsset create an asset in the world state with provided parameters.
+// @Summary create an asset in the world state with provided parameters.
+// @Tags Txs.mycc
+// @Security ApiKeyAuth
+// @Accept  json
+// @Produce json
+// @Param	Authorization	header	string	true 	"Insert access token" default(Bearer <Add access token here>)
+// @Param 	Asset	 		body 	dto.Asset 	true	"Asset Data"
+// @Success 204 "OK"
+// @Failure 401 {object} dto.Problem "err.unauthorized"
+// @Failure 400 {object} dto.Problem "err.processing_param"
+// @Failure 502 {object} dto.Problem "err.bad_gateway"
+// @Failure 504 {object} dto.Problem "err.network"
+// @Router /txs/create_asset [post]
+func (h HBlockchainTxs) CreateAsset(ctx iris.Context) {
+	// getting asset data
+	var assetParams dto.Asset
+	if err := ctx.ReadJSON(&assetParams); err != nil {
+		(*h.response).ResErr(&dto.Problem{Status: iris.StatusBadRequest, Title: schema.ErrProcParam, Detail: err.Error()}, &ctx)
+		return
+	}
+
+	_, problem := (*h.service).CreateAssetSvc(assetParams)
+	if problem != nil {
+		(*h.response).ResErr(problem, &ctx)
+		return
+	}
+
+	(*h.response).ResOK(&ctx)
 }
 
 // endregion =============================================================================

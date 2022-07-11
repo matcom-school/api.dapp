@@ -15,8 +15,9 @@ import (
 type ISvcBlockchainTxs interface {
 	SrvInitLedger() ([]byte, *dto.Problem)
 	GetUserSvc(id string) (*dto.User, *dto.Problem)
-	GetAssetSvc(id string) (interface{}, *dto.Problem)
-	//SetAssetSvc
+	ReadAssetSvc(id string) (interface{}, *dto.Problem)
+	CreateAssetSvc(asset dto.Asset) (interface{}, *dto.Problem)
+	UpdateAssetSvc(asset dto.Asset) (interface{}, *dto.Problem)
 }
 
 type svcBlockchainTxs struct {
@@ -31,23 +32,8 @@ func NewSvcBlockchainTxs(pRepo *hlf.RepoBlockchain, reposUser *db.RepoUsers) ISv
 	return &svcBlockchainTxs{pRepo, reposUser }
 }
 
-// region ======== METHODS IDENTITY ======================================================
+// region ======== METHODS ======================================================
 
-
-// Identity_GetIssuer Get an issuer from the blockchain ledger according with the given id.
-//func (s *svcBlockchainTxs) Identity_GetIssuer(id string) ([]byte, *dto.Problem) {
-//
-//	issuer, e := (*s.repo).Identity_GetIssuer(id)
-//	if e != nil {
-//		return nil, dto.NewProblem(iris.StatusBadGateway, schema.ErrBlockchainTxs, e.Error())
-//	}
-//
-//	return issuer, nil
-//}
-
-// endregion =============================================================================
-
-// region ======== METHODS SUFFRAGE ======================================================
 
 // SrvInitLedger Is a initial method for creating the necessary data for the suffrage contract
 // and saving it to the ledger.
@@ -62,12 +48,6 @@ func (s *svcBlockchainTxs) SrvInitLedger() ([]byte, *dto.Problem) {
 	return data, nil
 }
 
-// endregion =============================================================================
-
-// region ======== PRIVATE AUX ===========================================================
-// endregion =============================================================================
-
-
 func (s *svcBlockchainTxs) GetUserSvc(id string)  (*dto.User, *dto.Problem) {
 	res, err := (*s.reposUser).GetUser(id)
 	if err != nil {
@@ -76,8 +56,8 @@ func (s *svcBlockchainTxs) GetUserSvc(id string)  (*dto.User, *dto.Problem) {
 	return res, nil
 }
 
-func (s *svcBlockchainTxs) GetAssetSvc(ID string) (interface{}, *dto.Problem) {
-	item, err := (*s.repo).Get(ID)
+func (s *svcBlockchainTxs) ReadAssetSvc(ID string) (interface{}, *dto.Problem) {
+	item, err := (*s.repo).ReadAsset(ID)
 	if err != nil {
 		return nil, dto.NewProblem(iris.StatusExpectationFailed, schema.ErrBuntdb, err.Error())
 	}
@@ -89,3 +69,34 @@ func (s *svcBlockchainTxs) GetAssetSvc(ID string) (interface{}, *dto.Problem) {
 
 	return m, nil
 }
+
+func (s *svcBlockchainTxs) CreateAssetSvc(asset dto.Asset) (interface{}, *dto.Problem) {
+	item, err := (*s.repo).CreateAsset(asset)
+	if err != nil {
+		return nil, dto.NewProblem(iris.StatusExpectationFailed, schema.ErrBuntdb, err.Error())
+	}
+
+	result := lib.DecodePayload(item)
+
+	m, ok := result.(interface{})
+	if !ok {return nil, dto.NewProblem(iris.StatusExpectationFailed, schema.ErrDecodePayloadTx, err.Error())}
+
+	return m, nil
+}
+
+func (s *svcBlockchainTxs) UpdateAssetSvc(asset dto.Asset) (interface{}, *dto.Problem) {
+	item, err := (*s.repo).UpdateAsset(asset)
+	if err != nil {
+		return nil, dto.NewProblem(iris.StatusExpectationFailed, schema.ErrBuntdb, err.Error())
+	}
+
+	result := lib.DecodePayload(item)
+
+	m, ok := result.(interface{})
+	if !ok {return nil, dto.NewProblem(iris.StatusExpectationFailed, schema.ErrDecodePayloadTx, err.Error())}
+
+	return m, nil
+}
+
+
+// FALTA el CREATEASSSET
