@@ -44,7 +44,7 @@ func NewAuthHandler(app *iris.Application, MdwAuthChecker *context.Handler, svcR
 	repoUsers := db.NewRepoUsers(svcC)
 
 	svcIdentity := service.NewSvcHlfIdentity(&repoHlfIdentity, &repoUsers) // instantiating HLF identity Service
-	svcAuth := auth.NewSvcAuthentication(h.providers, svcC, &repoUsers)          // instantiating authentication Service
+	svcAuth := auth.NewSvcAuthentication(h.providers, svcC, &repoUsers)    // instantiating authentication Service
 
 	// registering unprotected router
 	authRouter := app.Party("/auth") // authorize
@@ -92,7 +92,7 @@ func NewAuthHandler(app *iris.Application, MdwAuthChecker *context.Handler, svcR
 // @Tags Auth
 // @Accept multipart/form-data
 // @Produce json
-// @Param	provider	path	string			true	"Auth provider identifier"
+// @Param	provider	path	string			true	"Auth provider identifier default"
 // @Param 	credential 	body 	dto.UserCredIn 	true	"User Login Credential"
 // @Success 200 "OK"
 // @Failure 401 {object} dto.Problem "err.unauthorized"
@@ -104,6 +104,7 @@ func (h HAuth) authIntent(ctx iris.Context, uCred *dto.UserCredIn, svcAuth *auth
 
 	provider := ctx.Params().Get("provider")
 	v, _ := h.providers[provider] // v, ok := map[key]
+
 	if !v {
 		(*h.response).ResErr(&dto.Problem{Status: iris.StatusBadRequest, Title: schema.ErrWrongAuthProvider, Detail: schema.ErrDetInvalidProvider}, &ctx)
 		return

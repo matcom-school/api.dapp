@@ -2,8 +2,9 @@ package hlf
 
 import (
 	"errors"
-	"github.com/ic-matcom/api.dapp/schema/ccFuncNames"
 	"path/filepath"
+
+	ccfuncnames "github.com/ic-matcom/api.dapp/schema/ccFuncNames"
 
 	"github.com/ic-matcom/api.dapp/schema"
 	"github.com/ic-matcom/api.dapp/service/utils"
@@ -31,6 +32,10 @@ type repoBlockchain struct {
 // endregion =============================================================================
 
 func NewRepoBlockchain(SvcConf *utils.SvcConfig) RepoBlockchain {
+	return newRepoBlockchain(SvcConf)
+}
+
+func newRepoBlockchain(SvcConf *utils.SvcConfig) *repoBlockchain {
 
 	wallet, err := gateway.NewFileSystemWallet(filepath.Join(SvcConf.CryptoMaterialsDir, schema.WalletStr))
 	if err != nil {
@@ -53,7 +58,7 @@ func NewRepoBlockchain(SvcConf *utils.SvcConfig) RepoBlockchain {
 func (r *repoBlockchain) InitLedger() ([]byte, error) {
 
 	// getting components instance
-	gw, _, contract, e := r.getSDKComponents(r.ChannelName, ccfuncnames.ContractNameCC1 , true)
+	gw, _, contract, e := r.getSDKComponents(r.ChannelName, ccfuncnames.ContractNameCC1, true)
 	if e != nil {
 		return nil, e
 	}
@@ -70,7 +75,7 @@ func (r *repoBlockchain) InitLedger() ([]byte, error) {
 
 func (r *repoBlockchain) Get(ID string) ([]byte, error) {
 	// getting components instance
-	gw, _, contract, e := r.getSDKComponents(r.ChannelName, ccfuncnames.ContractNameCC1 , false)
+	gw, _, contract, e := r.getSDKComponents(r.ChannelName, ccfuncnames.ContractNameCC1, false)
 	if e != nil {
 		return nil, e
 	}

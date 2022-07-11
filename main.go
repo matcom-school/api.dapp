@@ -16,7 +16,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-
 // @title eVote
 // @version 0.0
 // @description Hyperledger Fabric blockchain solution for electronic election system
@@ -29,9 +28,7 @@ import (
 
 // TIPS This Ip here 👇🏽  must be change when compiling to deploy, can't figure out how to do it dynamically with Iris.
 
-
-
-// @host 192.168.49.133:7001
+// @host localhost:7001
 // @BasePath /
 func main() {
 	// region ======== GLOBALS ===============================================================
@@ -68,7 +65,6 @@ func main() {
 		ctx.Next()
 	}
 
-
 	// built-ins
 	app.Use(logger.New())
 	app.UseRouter(crs) // Recovery middleware recovers from any panics and writes a 500 if there was one.
@@ -82,6 +78,7 @@ func main() {
 
 	endpoints.NewAuthHandler(app, &MdwAuthChecker, svcResponse, svcConfig)
 	endpoints.NewBlockchainTxsHandler(app, &MdwAuthChecker, svcResponse, svcConfig) // Blockchain transactions handlers
+	endpoints.NewFilesTxsHandler(app, &MdwAuthChecker, svcResponse, svcConfig)
 	// endregion =============================================================================
 
 	// region ======== SWAGGER REGISTRATION ==================================================
@@ -94,7 +91,6 @@ func main() {
 	// use swagger middleware to
 	app.Get("/swagger/{any:path}", swagger.CustomWrapHandler(sc, swaggerFiles.Handler))
 	// endregion =============================================================================
-
 
 	addr := fmt.Sprintf("%s:%s", svcConfig.ApiDocIp, svcConfig.DappPort)
 
