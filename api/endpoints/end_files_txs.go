@@ -1,6 +1,8 @@
 package endpoints
 
 import (
+	"fmt"
+
 	"github.com/ic-matcom/api.dapp/repo/hlf"
 	"github.com/ic-matcom/api.dapp/schema"
 	"github.com/ic-matcom/api.dapp/schema/dto"
@@ -57,12 +59,12 @@ func NewFilesTxsHandler(app *iris.Application, mdwAuthChecker *context.Handler, 
 		// we use the hero handler to inject the depObtainUserDid dependency. If we don't need to inject any dependencies we jus call guardTxsRouter.Get("/identity/identity/{id:string}", h.Identity_DevPopulate)
 
 		guardTxsRouter.Post("/file", h.CreateFile)
-		guardTxsRouter.Patch("/file/{id:string}", h.UpdateFile)
 		guardTxsRouter.Delete("/file/{id:string}", h.DeleteFile)
+		guardTxsRouter.Patch("/file/{id:string}", h.UpdateFile)
 		guardTxsRouter.Patch("/transfer/file/{id:string}", h.TransferFile)
-		guardTxsRouter.Get("/file/{id:string}", h.GetFileById)
 		guardTxsRouter.Get("/file", h.GetAllFiles)
-		guardTxsRouter.Get("/history/file", h.FilesHistory)
+		guardTxsRouter.Get("/file/{id:string}", h.GetFileById)
+		guardTxsRouter.Get("/history/file/{id:string}", h.FilesHistory)
 	}
 
 	return h
@@ -71,14 +73,13 @@ func NewFilesTxsHandler(app *iris.Application, mdwAuthChecker *context.Handler, 
 // region ======== ENDPOINT HANDLERS DEV =================================================
 
 // CreateFile
-// @description.markdown SetElection_Request
 // @Tags Txs.eVote
 // @Security ApiKeyAuth
 // @Accept  json
 // @Produce json
 // @Param	Authorization	header	string 			        true 	"Insert access token" default(Bearer <Add access token here>)
 // @Param	tx				body	dto.FilesCreateDto		true	"Test data"
-// @Success 200 {object} []dto.TestRequest "OK"
+// @Success 200 {object} interface{} "OK"
 // @Failure 401 {object} dto.Problem "err.unauthorized"
 // @Failure 400 {object} dto.Problem "err.processing_param"
 // @Failure 502 {object} dto.Problem "err.bad_gateway"
@@ -108,15 +109,16 @@ func (h HFilesTxs) CreateFile(ctx iris.Context) {
 // @Accept  json
 // @Produce json
 // @Param	Authorization	header	string 			        true 	"Insert access token" default(Bearer <Add access token here>)
-// @Param	tx				path	string					true	"file id"
+// @Param	id				path	string					true	"ID"	Format(string) default(mockAssect1)
 // @Param	tx				body	dto.FilesUpdateDto		true	"Test data"
-// @Success 200 {object} []dto.TestRequest "OK"
+// @Success 200 {object} interface{} "OK"
 // @Failure 401 {object} dto.Problem "err.unauthorized"
 // @Failure 400 {object} dto.Problem "err.processing_param"
 // @Failure 502 {object} dto.Problem "err.bad_gateway"
 // @Failure 504 {object} dto.Problem "err.network"
 // @Router /txs/file/{id} [patch]
 func (h HFilesTxs) UpdateFile(ctx iris.Context) {
+	fmt.Printf("Aqui estoy")
 
 	id := ctx.Params().GetString("id")
 	if id == "" {
@@ -146,8 +148,8 @@ func (h HFilesTxs) UpdateFile(ctx iris.Context) {
 // @Accept  json
 // @Produce json
 // @Param	Authorization	header	string 			        true 	"Insert access token" default(Bearer <Add access token here>)
-// @Param	tx				path	string					true	"file id"
-// @Success 200 {object} []dto.TestRequest "OK"
+// @Param	id				path	string					true	"ID"	Format(string) default(mockAssect1)
+// @Success 200 {object} interface{} "OK"
 // @Failure 401 {object} dto.Problem "err.unauthorized"
 // @Failure 400 {object} dto.Problem "err.processing_param"
 // @Failure 502 {object} dto.Problem "err.bad_gateway"
@@ -176,9 +178,9 @@ func (h HFilesTxs) DeleteFile(ctx iris.Context) {
 // @Accept  json
 // @Produce json
 // @Param	Authorization	header	string 			        true 	"Insert access token" default(Bearer <Add access token here>)
-// @Param	tx				path	string					true	"file id"
+// @Param	id				path	string					true	"ID"	Format(string) default(mockAssect1)
 // @Param	tx				body	dto.FileTransferDto		true	"Test data"
-// @Success 200 {object} []dto.TestRequest "OK"
+// @Success 200 {object} interface{} "OK"
 // @Failure 401 {object} dto.Problem "err.unauthorized"
 // @Failure 400 {object} dto.Problem "err.processing_param"
 // @Failure 502 {object} dto.Problem "err.bad_gateway"
@@ -214,8 +216,7 @@ func (h HFilesTxs) TransferFile(ctx iris.Context) {
 // @Accept  json
 // @Produce json
 // @Param	Authorization	header	string 			        true 	"Insert access token" default(Bearer <Add access token here>)
-// @Param	tx				path	dto.FilesCreateDto		true	"Test data"
-// @Success 200 {object} []dto.Files "OK"
+// @Param	id				path	string					true	"ID"	Format(string) default(mockAssect1)
 // @Failure 401 {object} dto.Problem "err.unauthorized"
 // @Failure 400 {object} dto.Problem "err.processing_param"
 // @Failure 502 {object} dto.Problem "err.bad_gateway"
@@ -244,24 +245,18 @@ func (h HFilesTxs) GetFileById(ctx iris.Context) {
 // @Accept  json
 // @Produce json
 // @Param	Authorization	header	string 			        true 	"Insert access token" default(Bearer <Add access token here>)
-// @Param	tx				query	dto.FileGetAllQuery		true	"filter query"
+// @Param	owner			query	string					false	"ownerID"	Format(string) default(tomoko@gmail.com)
 // @Success 200 {object} []dto.Files "OK"
 // @Failure 401 {object} dto.Problem "err.unauthorized"
 // @Failure 400 {object} dto.Problem "err.processing_param"
 // @Failure 502 {object} dto.Problem "err.bad_gateway"
 // @Failure 504 {object} dto.Problem "err.network"
-// @Router /txs/file/ [get]
+// @Router /txs/file [get]
 func (h HFilesTxs) GetAllFiles(ctx iris.Context) {
-	var request dto.FileGetAllQuery
+	owner := ctx.URLParam("owner")
 
-	e := ctx.ReadQuery(request)
-	if e != nil {
-		(*h.response).ResErr(&dto.Problem{Status: iris.StatusBadRequest, Title: schema.ErrProcParam, Detail: e.Error()}, &ctx)
-		return
-	}
-
-	if request.Owner != "" {
-		res, problem := (*h.service).GetAllFilesByOwner(request.Owner)
+	if owner != "" {
+		res, problem := (*h.service).GetAllFilesByOwner(owner)
 		if problem != nil {
 			(*h.response).ResErr(problem, &ctx)
 			return
@@ -285,8 +280,8 @@ func (h HFilesTxs) GetAllFiles(ctx iris.Context) {
 // @Accept  json
 // @Produce json
 // @Param	Authorization	header	string 			        true 	"Insert access token" default(Bearer <Add access token here>)
-// @Param	tx				path	string					true	"file id"
-// @Success 200 {object} []dto.Files "OK"
+// @Param	id				path	string					true	"ID"	Format(string) default(mockAssect1)
+// @Success 200 {object} []dto.FileHistoryDto "OK"
 // @Failure 401 {object} dto.Problem "err.unauthorized"
 // @Failure 400 {object} dto.Problem "err.processing_param"
 // @Failure 502 {object} dto.Problem "err.bad_gateway"

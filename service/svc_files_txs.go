@@ -43,8 +43,9 @@ func (s *svcFilesTxs) CreateFile(file dto.FilesCreateDto) *dto.Problem {
 	}
 	currentTime := time.Now()
 
+	id := string(out)
 	f := dto.Files{
-		ID:        string(out),
+		ID:        id[:len(id)-1],
 		Name:      file.Name,
 		Url:       file.Url,
 		CreatedAt: currentTime.Format("2006.01.02 15:04:05"),
@@ -52,9 +53,16 @@ func (s *svcFilesTxs) CreateFile(file dto.FilesCreateDto) *dto.Problem {
 		Size:      file.Size,
 		Type:      file.Type,
 	}
-	e = (*s.repo).CreateFile(f)
+	ccErr, e := (*s.repo).CreateFile(f)
 	if e != nil {
 		return dto.NewProblem(iris.StatusBadGateway, schema.ErrBlockchainTxs, e.Error())
+	}
+
+	result := lib.DecodePayload(ccErr)
+
+	m, ok := result.(error)
+	if ok {
+		return dto.NewProblem(iris.StatusExpectationFailed, schema.ErrDecodePayloadTx, m.Error())
 	}
 
 	return nil
@@ -78,9 +86,15 @@ func (s *svcFilesTxs) GetFileById(id string) (interface{}, *dto.Problem) {
 
 func (s *svcFilesTxs) UpdateFile(id string, file dto.FilesUpdateDto) *dto.Problem {
 
-	e := (*s.repo).UpdateFile(id, file)
+	ccErr, e := (*s.repo).UpdateFile(id, file)
 	if e != nil {
 		return dto.NewProblem(iris.StatusBadGateway, schema.ErrBlockchainTxs, e.Error())
+	}
+	result := lib.DecodePayload(ccErr)
+
+	m, ok := result.(error)
+	if ok {
+		return dto.NewProblem(iris.StatusExpectationFailed, schema.ErrDecodePayloadTx, m.Error())
 	}
 
 	return nil
@@ -88,9 +102,15 @@ func (s *svcFilesTxs) UpdateFile(id string, file dto.FilesUpdateDto) *dto.Proble
 
 func (s *svcFilesTxs) DeleteFile(id string) *dto.Problem {
 
-	e := (*s.repo).DeleteFile(id)
+	ccErr, e := (*s.repo).DeleteFile(id)
 	if e != nil {
 		return dto.NewProblem(iris.StatusBadGateway, schema.ErrBlockchainTxs, e.Error())
+	}
+	result := lib.DecodePayload(ccErr)
+
+	m, ok := result.(error)
+	if ok {
+		return dto.NewProblem(iris.StatusExpectationFailed, schema.ErrDecodePayloadTx, m.Error())
 	}
 
 	return nil
@@ -98,9 +118,15 @@ func (s *svcFilesTxs) DeleteFile(id string) *dto.Problem {
 
 func (s *svcFilesTxs) TransferFile(id string, userId string) *dto.Problem {
 
-	e := (*s.repo).TransferFile(id, userId)
+	ccErr, e := (*s.repo).TransferFile(id, userId)
 	if e != nil {
 		return dto.NewProblem(iris.StatusBadGateway, schema.ErrBlockchainTxs, e.Error())
+	}
+	result := lib.DecodePayload(ccErr)
+
+	m, ok := result.(error)
+	if ok {
+		return dto.NewProblem(iris.StatusExpectationFailed, schema.ErrDecodePayloadTx, m.Error())
 	}
 
 	return nil

@@ -12,7 +12,6 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/kataras/iris/v12 v12.2.0-alpha2.0.20210304161013-7272c76847eb
 	github.com/lib/pq v1.10.0
-<<<<<<< HEAD
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/swaggo/swag v1.7.0
@@ -22,9 +21,5 @@ require (
 	golang.org/x/tools v0.1.5 // indirect
 	google.golang.org/grpc v1.33.2 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
-=======
-	github.com/swaggo/swag v1.7.0
-	github.com/tkanos/gonfig v0.0.0-20210106201359-53e13348de2f
->>>>>>> 2cdd586e6517bc9edafdc49395ce5f7b8feac33d
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 )

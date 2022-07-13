@@ -79,6 +79,7 @@ func main() {
 	endpoints.NewAuthHandler(app, &MdwAuthChecker, svcResponse, svcConfig)
 	endpoints.NewBlockchainTxsHandler(app, &MdwAuthChecker, svcResponse, svcConfig) // Blockchain transactions handlers
 	endpoints.NewFilesTxsHandler(app, &MdwAuthChecker, svcResponse, svcConfig)
+	endpoints.NewUserTxsHandler(app, &MdwAuthChecker, svcResponse, svcConfig)
 	// endregion =============================================================================
 
 	// region ======== SWAGGER REGISTRATION ==================================================

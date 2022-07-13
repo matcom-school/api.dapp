@@ -39,14 +39,22 @@ func (s *svcUsersTxs) CreateUser(user dto.UserBlockchainCreate) *dto.Problem {
 	}
 	currentTime := time.Now()
 
+	id := string(out)
 	u := dto.UserBlockchain{
-		ID:        string(out),
+		ID:        id[:len(id)-1],
 		Name:      user.Name,
 		CreatedAt: currentTime.Format("2006.01.02 15:04:05"),
 	}
-	e = (*s.repo).CreateUser(u)
+	ccErr, e := (*s.repo).CreateUser(u)
 	if e != nil {
 		return dto.NewProblem(iris.StatusBadGateway, schema.ErrBlockchainTxs, e.Error())
+	}
+
+	result := lib.DecodePayload(ccErr)
+
+	m, ok := result.(error)
+	if ok {
+		return dto.NewProblem(iris.StatusExpectationFailed, schema.ErrDecodePayloadTx, m.Error())
 	}
 
 	return nil
@@ -70,9 +78,16 @@ func (s *svcUsersTxs) GetUserById(id string) (interface{}, *dto.Problem) {
 
 func (s *svcUsersTxs) DeleteUser(id string) *dto.Problem {
 
-	e := (*s.repo).DeleteUser(id)
+	ccErr, e := (*s.repo).DeleteUser(id)
 	if e != nil {
 		return dto.NewProblem(iris.StatusBadGateway, schema.ErrBlockchainTxs, e.Error())
+	}
+
+	result := lib.DecodePayload(ccErr)
+
+	m, ok := result.(error)
+	if ok {
+		return dto.NewProblem(iris.StatusExpectationFailed, schema.ErrDecodePayloadTx, m.Error())
 	}
 
 	return nil
